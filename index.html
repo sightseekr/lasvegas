@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Ultimate Map: Las Vegas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+  <style>
+     @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@300;400&family=Brandon+Grotesque:wght@400;700&display=swap');
+
+/* Login page styles */
+#login-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #FFFEFC, #FADBD8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.login-container {
+  text-align: center;
+  background: #FFFEFC;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  max-width: 420px;
+  width: 90%;
+}
+
+.login-logo {
+  width: 100%;
+  max-width: 370px;
+  height: auto;
+  margin-bottom: 0px;
+}
+
+.login-container h2 {
+  font-family: 'Brandon Grotesque', sans-serif;
+  font-size: 1.8em;
+  margin-bottom: 10px;
+  color: #444454;
+}
+
+.login-subtitle {
+  font-size: 1em;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+#password {
+  width: 100%;
+  padding: 14px 18px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1px solid #F5B9B4;
+  background-color: #FFFEFC;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#password:focus {
+  border-color: #EA736B;
+}
+
+#login-btn {
+  background-color: #EA736B;
+  color: white;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-family: 'Avenir', sans-serif;
+  font-weight: bold;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+#login-btn:hover {
+  background-color: #EF968F;
+  transform: scale(1.03);
+}
+
+#error {
+  color: #EA736B;
+  font-style: italic;
+  margin-top: 10px;
+  display: none;
+}
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+    #map-container { display: none; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    .mapboxgl-popup-content {
+      background-color: rgba(255, 255, 255, 1) !important;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: sans-serif;
+      max-width: 220px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    }
+    .custom-popup strong {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .custom-popup p {
+      font-size: 0.85em;
+      font-style: italic;
+      margin: 0 0 6px;
+    }
+    .custom-popup .directions-btn,
+    .custom-popup .mark-visited-btn {
+      all: unset;
+      background-color: #8f0000;
+      color: white;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 0.85em;
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      max-height: 26px;
+      gap: 5px;
+      text-decoration: none;
+    }
+    .custom-popup .directions-btn:hover {
+      background-color: #4d0303;
+    }
+    #search-container {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      width: 90%;
+      max-width: 400px;
+    }
+    #search {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    #suggestions {
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      z-index: 2;
+    }
+    .suggestion {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .suggestion:hover {
+      background: #f0f0f0;
+    }
+    .no-results {
+      padding: 8px 12px;
+      color: #666;
+      font-style: italic;
+    }
+    #layer-toggle {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.9em;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+#layer-toggle h3 {
+  margin: 0 0 8px;
+  font-size: 1em;
+}
+#layer-toggle label {
+  display: block;
+  cursor: pointer;
+}
+#layer-toggle label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  gap: 6px;
+}
+
+#layer-toggle .legend-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.icon {
+  display: inline-block;
+  background-image: url('https://api.mapbox.com/styles/v1/sightseekr/cmueiretg003801s80uz6g23w/sprite.png?access_token=pk.eyJ1Ijoic2lnaHRzZWVrciIsImEiOiJjbWgxdmNsZ2owc3h2MDhxcGdiZno4c3ptIn0.ODNk5NVKUxNh0b9QoL5tqQ');
+  background-repeat: no-repeat;
+  margin-right: 6px;
+  vertical-align: middle; 
+}
+
+/* Example numbers — update from your JSON */
+.icon-hotel {
+  background-position: -160px -351px;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-fnd {
+  background-position: -160px -391px;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-attraction {
+  background-position: -158px -271px;
+  width: 20px;
+  height: 20px;
+}
+
+  </style>
+</head>
+<body>
+    <!-- Login Page -->
+<div id="login-page">
+  <div class="login-container">
+    <img 
+      src="https://static.wixstatic.com/media/eb9535_9d1043c625be4e6882a9bc0ad92f3463~mv2.png/v1/crop/x_0,y_598,w_1500,h_338/fill/w_1200,h_270,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/MTM%20Thin%20Pink.png" 
+      alt="Logo" 
+      class="login-logo" 
+    />
+    <h2>Welcome, explorer!</h2>
+    <p class="login-subtitle">This map is password protected</p>
+    <form id="login-form">
+      <input type="password" id="password" placeholder="Enter password" />
+      <button type="submit" id="login-btn">Enter</button>
+    </form>
+    <p id="error">Incorrect password</p>
+  </div>
+</div>
+<div id="map-container">
+<div id="map"></div>
+<div id="search-container">
+  <input type="text" id="search" placeholder="Find a Sightseekr recommendation in Las Vegas..." />
+  <div id="suggestions"></div>
+</div>
+<div id="layer-toggle">
+  <h3>Sightseekr Recommended...</h3>
+  <label><input type="checkbox" id="toggle-attractions" checked> <span class="icon icon-attraction"></span> Things to see & do</label><br>
+  <label><input type="checkbox" id="toggle-fnd" checked> <span class="icon icon-fnd"></span> Food & drink</label><br>
+  <label><input type="checkbox" id="toggle-hotels" checked> <span class="icon icon-hotel"></span> Hotels on The Strip</label>
+</div></div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('authenticated') === 'true') {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('map-container').style.display = 'block';
+    initializeMap();
+  }
+});
+     const CORRECT_PASSWORD = "las26";
+let map;
+
+// Login handler
+document.getElementById('login-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const input = document.getElementById('password').value;
+  
+  if (input === CORRECT_PASSWORD) {
+    localStorage.setItem('authenticated', 'true');
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('map-container').style.display = 'block';
+    initializeMap();
+  } else {
+    document.getElementById('error').style.display = 'block';
+  }
+});
+    function initializeMap() {
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic2lnaHRzZWVrciIsImEiOiJjbWgxdmNsZ2owc3h2MDhxcGdiZno4c3ptIn0.ODNk5NVKUxNh0b9QoL5tqQ';
+
+    map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/sightseekr/cmueiretg003801s80uz6g23w',
+    center: [-115.173014, 36.109062],
+    zoom: 12.57
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+  map.addControl(new mapboxgl.GeolocateControl({
+    positionOptions: { enableHighAccuracy: true },
+    trackUserLocation: true,
+    showUserHeading: true
+}), 'bottom-right');
+
+const savedPoints = [
+
+  // THINGS TO DO
+
+  {
+    name: "Miracle Mile Shops",
+    tags: ["shopping", "Planet Hollywood", "designer", "restaurants", "entertainment", "free shows", "sightseeing"],
+    description: "The Miracle Mile shops is a shopping complex at Planet Hollywood that is over a mile long! Anything you're looking for, we're sure you'll find here, from a quick burger to a designer handbag, a new pair of trainers or an evening in a showgirl bar! Definitely worth a wander through. There are regular free shows here dotted throughout the shopping complex, such as a rain show where light is projected onto water falling in-between the shops! Look out for signs on your way around!",
+    coordinates: [-115.17257, 36.10934]
+  },
+
+  {
+    name: "Eiffel Tower",
+    tags: ["landmark", "architecture", "sightseeing", "Las Vegas Strip", "observation deck", "ticketed"],
+    description: "The Eiffel Tower replica is hard to miss, but make sure you include it on your sightseeing route of the Las Vegas Strip! You can even pay for entry and head up to the 46th floor observation deck for views of the strip below. ",
+    coordinates: [-115.17251, 36.11248]
+  },
+
+  {
+    name: "Fountains of Bellagio",
+    tags: ["landmark", "free", "water show", "Bellagio", "sightseeing", "Las Vegas Strip"],
+    description: "An incredible, free water show outside the Bellagio hotel, definitely not to be missed by any visitor to Las Vegas.\n\nThe fountains operate every 30 minutes on weekdays from 3-7:30pm, then every 15 minutes 8pm-midnight.\n\nOn weekends and holidays, they do even more shows, running every 30 minutes from 12-7:30pm, then again every 15 minutes from 8pm-midnight.   ",
+    coordinates: [-115.17391, 36.11271]
+  },
+
+  {
+    name: "High Roller",
+    tags: ["landmark", "observation wheel", "views", "Las Vegas Strip", "ticketed", "drinks"],
+    description: "The LINQ's observation wheel with amazing views of the Las Vegas strip! An adult ticket pre-booked online is $33, or take their Happy Half Hour option for $73 which includes unlimited drinks!",
+    coordinates: [-115.16829, 36.11763]
+  },
+
+  {
+    name: "The Forum Shops",
+    tags: ["shopping", "designer", "restaurants", "architecture", "Caesars Palace", "Roman", "sightseeing"],
+    description: "A huge selection of high-end designer shops, which then opens up into high-street brands and a food court of both restaurants and casual dining. Just the interior design itself is enough to say you should visit these shops within Caesars Palace, they match the hotel's Roman theme, and you can even find spiral escalators inside!",
+    coordinates: [-115.17612, 36.119]
+  },
+
+  {
+    name: "Grand Canal Shoppes",
+    tags: ["shopping", "restaurants", "Venetian", "gondola", "canals", "sightseeing"],
+    description: "Whether you want to dine by the water, take a gondola ride down a canal, shop 'till you drop or simply walk through and take in the sights, the Grand Canal Shoppes are definitely a must-see in Las Vegas. Stepping inside the Venetian is incredible enough, but when you see the canals running through the shops and hotel, it's absolutely insane!",
+    coordinates: [-115.16742, 36.12238]
+  },
+
+  {
+    name: "Trevi Fountain",
+    tags: ["landmark", "architecture", "Roman", "replica", "sightseeing"],
+    description: "Of course, nothing compares to the real Rome, but this Trevi Fountain replica certainly is impressive!",
+    coordinates: [-115.1732, 36.11864]
+  },
+
+  {
+    name: "The Colosseum Theatre",
+    tags: ["architecture", "Roman", "amphitheatre", "events", "sightseeing"],
+    description: "Even if you're not watching a show here, it's worth stopping by to admire the incredible architecture and design of this Roman amphitheatre inspired events venue!Even if you're not watching a show here, it's worth stopping by to admire the incredible architecture and design of this Roman amphitheatre inspired events venue!",
+    coordinates: [-115.17645, 36.11611]
+  },
+
+  {
+    name: "Sphere",
+    tags: ["landmark", "LED screen", "concerts", "movies", "events", "entertainment", "sightseeing"],
+    description: "Whether you watch a concert or a movie here, or just sit in awe of the world's largest LED screen, you absolutely have to make sure you see the Sphere on your Las Vegas trip! It's almost unbelievable, and an amazing events venue if there's anything on that you'd like to see.",
+    coordinates: [-115.16204, 36.12121]
+  },
+
+  {
+    name: "Shark Reef Aquarium in Mandalay Bay",
+    tags: ["aquarium", "animals", "Mandalay Bay", "indoor", "ticketed", "family"],
+    description: "Yes, there is an aquarium inside of this hotel - what else could you expect from Las Vegas? The Aquarium in Mandalay Bay holds over 2000 animals and is a great place to head for a few hours out of the sun!",
+    coordinates: [-115.17647, 36.08877]
+  },
+
+  {
+    name: "Welcome to Fabulous Las Vegas Sign",
+    tags: ["landmark", "photo opportunity", "Las Vegas Strip", "sightseeing"],
+    description: "The best photo opportunity in Las Vegas, right at the very South end of the strip! It's popular, so you could have to queue to take a picture. There also may be people around trying to scam tourists to pay for pictures, so be aware!",
+    coordinates: [-115.17277, 36.08207]
+  },
+
+  {
+    name: "Allegiant Stadium",
+    tags: ["stadium", "American Football", "Las Vegas Raiders", "guided tour", "sports", "ticketed"],
+    description: "You can visit, and even take a guided tour of the Las Vegas Raiders Allegiant Stadium. Perfect for any American Football fan!",
+    coordinates: [-115.18332, 36.09086]
+  },
+
+  {
+    name: "Gateway Arches Las Vegas",
+    tags: ["landmark", "photo opportunity", "Las Vegas sign", "sightseeing", "The STRAT"],
+    description: "There's actually a second Las Vegas sign, as well as the famous Welcome to Fabulous Las Vegas sign at the southern end of the strip. These huge gateway arches are a great photo opportunity close to the Strat hotel and casino.",
+    coordinates: [-115.15526, 36.1465]
+  },
+
+  {
+    name: "Bellagio Conservatory & Botanical Garden",
+    tags: ["free", "botanical garden", "plants", "sculptures", "Bellagio", "sightseeing"],
+    description: "An amazing free attraction, this conservatory is a stunning collection of plants and sculptures, set around a specific theme for each season. Well worth a visit!",
+    coordinates: [-115.17656, 36.11199]
+  },
+
+  {
+    name: "Seven Magic Mountains",
+    tags: ["art", "installation", "sightseeing", "road trip", "guided tour"],
+    description: "Just a short 30-minute drive from the city centre, this art installation is definitely worth a visit either as part of a guided tour like with Max Tours, or independently if you've hired a car.",
+    coordinates: [-115.27096, 35.83923]
+  },
+
+  {
+    name: "Koolsville Tattoo",
+    tags: ["tattoo", "Arts District", "souvenir", "fine line", "shopping"],
+    description: "An iconic spot in the arts district of Las Vegas where you can get a selection of small, fine line tattoos for only $10! The best souvenir to take home from your trip!",
+    coordinates: [-115.15345, 36.15667]
+  },
+
+  {
+    name: "The Mob Museum",
+    tags: ["museum", "history", "crime", "prohibition", "organised crime", "interactive", "speakeasy", "distillery"],
+    description: "The Mob Museum isn't any basic museum, it covers the full history of Las Vegas including how the city was built on crime and prohibition, and organised crime across the country. It has 3 floors of immersive exhibitions that each teach you something new, with lots of interactive elements. Check out their speakeasy and distillery too!",
+    coordinates: [-115.14123, 36.17281]
+  },
+
+  {
+    name: "The Big Apple Coaster",
+    tags: ["roller coaster", "New York-New York", "thrill ride", "entertainment", "ticketed"],
+    description: "A roller coaster running around and through the famous New York-New York hotel! ",
+    coordinates: [-115.1746, 36.10228]
+  },
+
+  {
+    name: "Las Vegas North Premium Outlets",
+    tags: ["shopping", "outlet", "designer", "deals", "fashion"],
+    description: "Don't miss this if you love a deal! The Las Vegas Premium outlets offer designer brands at very reduced prices. A short drive from the strip, easily accessible by car, bus, rideshare or taxi.",
+    coordinates: [-115.15784, 36.16252]
+  },
+
+  {
+    name: "Las Vegas South Premium Outlets",
+    tags: ["shopping", "outlet", "designer", "deals", "fashion"],
+    description: "Don't miss this if you love a deal! The Las Vegas Premium outlets offer designer brands at very reduced prices. A short drive from the strip, easily accessible by car, bus, rideshare or taxi.",
+    coordinates: [-115.16892, 36.05393]
+  },
+
+
+  // HOTELS
+
+  {
+    name: "ARIA",
+    tags: ["hotel", "luxury", "dining", "spa", "nightclub", "5-star"],
+    description: "A stunning, modern, luxury hotel with great dining options, an impressive spa and the brilliant Jewel nightclub all on-site. 5-star rated",
+    coordinates: [-115.17675, 36.10737]
+  },
+
+  {
+    name: "Bellagio",
+    tags: ["hotel", "luxury", "fountains", "conservatory", "dining", "5-star"],
+    description: "Home to the incredible Bellagio Fountains and Bellagio Conservatory, this hotel has a sophisticated feel. Inspired by the village of Bellagio on Lake Como in Italy, the Bellagio is a must-visit for anyone exploring Las Vegas. 5-star rated",
+    coordinates: [-115.1765, 36.11294]
+  },
+
+  {
+    name: "Caesars Palace",
+    tags: ["hotel", "casino", "Roman", "shopping", "restaurants", "Colosseum", "Trevi Fountain", "5-star"],
+    description: "This Roman-themed hotel is just an insane sight! Caesars Palace is one of the original, famous Las Vegas hotels, and for good reason. There's countless shops, restaurants and bars in The Forum Shops, an arena built to mimic the Colosseum, a replica Trevi Fountain, and huge Roman columns and architecture throughout. You could very easily get lost in here!! 5-star rated",
+    coordinates: [-115.17614, 36.11726]
+  },
+
+  {
+    name: "Circus Circus",
+    tags: ["hotel", "casino", "carnival", "circus", "restaurants", "3-star"],
+    description: "An iconic hotel in Las Vegas with a carnival, lots of dining options from affordable and casual spots to high-end restaurants, and of course, circus acts!! Shaped like a circus tent, you really can't miss it. 3-star rated",
+    coordinates: [-115.16285, 36.13665]
+  },
+
+  {
+    name: "The Cosmopolitan",
+    tags: ["hotel", "luxury", "dining", "drinks", "Chelsea Theatre", "live music", "events", "5-star"],
+    description: "This stylish hotel is modern, with a luxury feel. It has great food and drink options for casual or high-end restaurants, all cuisines. It's also home to the Chelsea Theatre with lots of live music and events. 5-star rated",
+    coordinates: [-115.17541, 36.10996]
+  },
+
+  {
+    name: "Wynn",
+    tags: ["hotel", "luxury", "golf resort", "spa", "bars", "restaurants", "5-star"],
+    description: "Towards the north of the strip, this luxury hotel and golf resort is a highly rated stay. It's home to a modern spa and lots of prestigious bars and restaurants. 5-star rated. ",
+    coordinates: [-115.16195, 36.12611]
+  },
+
+  {
+    name: "Excalibur",
+    tags: ["hotel", "casino", "medieval", "castle", "budget", "Las Vegas Strip", "3-star"],
+    description: "Never seen a hotel designed in the shape of a medieval castle before? Well of course, Las Vegas is the place to see it! Excalibur is a more budget friendly option for accommodation on the strip and a great sight to see in Las Vegas. We also love their $3 Margarita drinks deals in the casino bars! 3-star rated.",
+    coordinates: [-115.17543, 36.09879]
+  },
+
+  {
+    name: "Flamingo",
+    tags: ["hotel", "casino", "historic", "Las Vegas Strip", "central", "3.5-star"],
+    description: "This iconic, original Las Vegas hotel is a must-see for any visitor. It opened in 1946, and is still running as a perfectly located hotel, central on the strip, so it's close and easy to get to most main attractions! 3.5-star rated",
+    coordinates: [-115.17039, 36.11663]
+  },
+
+  {
+    name: "Fontainebleau",
+    tags: ["hotel", "luxury", "theatre", "nightclub", "restaurants", "fine dining"],
+    description: "Home to the BleauLive theatre, LIV Beach and LIV Nightclub, you may find yourself visiting Fontainebleau even if you're not staying here. This hotel has a modern, luxury feel with a very sleek design. There's a huge range of restaurants from more casual options to fine dining.",
+    coordinates: [-115.15943, 36.13739]
+  },
+
+  {
+    name: "Four Seasons",
+    tags: ["hotel", "spa", "luxury", "non-gaming", "non-smoking", "restaurants", "bar"],
+    description: "This hotel and spa is non-gaming and non-smoking, so if you're looking for a luxury, quieter escape from the strip, this is the place to go. Non-residents can still enter to access the spa or delicious restaurant and bar options. ",
+    coordinates: [-115.1743, 36.09103]
+  },
+
+  {
+    name: "Harrah’s",
+    tags: ["hotel", "casino", "central", "monorail", "dining", "3-star"],
+    description: "A centrally located hotel and casino with a lively atmosphere. Really convenient for getting to any point on the strip either walking, using the monorail or by taxi! 3-star rated.",
+    coordinates: [-115.17163, 36.11946]
+  },
+
+  {
+    name: "Horseshoe",
+    tags: ["hotel", "casino", "historic", "restaurants", "steakhouse", "3-star"],
+    description: "Another iconic original Las Vegas hotel and casino waiting to be explored! There are lots of casual daytime food and drink stops here such as Lavazza, Subway and Nosh Deli, as well as a Jack Binion's steakhouse. 3-star rated. ",
+    coordinates: [-115.16778, 36.11371]
+  },
+
+  {
+    name: "The LINQ",
+    tags: ["hotel", "casino", "central", "dining", "drinking", "entertainment", "observation wheel", "4-star"],
+    description: "Right in the centre of the strip, the LINQ is perfectly located whether you want to stay in the middle of all the action, or find some great dining, drinking or entertainment options with amazing transport links. There's even a huge observation wheel where you can enjoy amazing views of the strip! 4-star rated",
+    coordinates: [-115.17135, 36.11822]
+  },
+
+  {
+    name: "Luxor",
+    tags: ["hotel", "casino", "Egyptian", "pyramid", "entertainment", "Blue man group", "Titanic exhibition"],
+    description: "This Egyptian-themed, pyramid-shaped hotel is an incredible sight to see, whether you're staying here or not! The spotlight from the top of Luxor hotel & casino is a striking part of the Las Vegas skyline at night, look out for it when you have a view of the Strip. Luxor is home to lots of entertainment options including the Blue man group and the Titanic exhibition. ",
+    coordinates: [-115.17606, 36.0955]
+  },
+
+  {
+    name: "Mandalay Bay",
+    tags: ["hotel", "casino", "aquarium", "beach", "lazy river", "shopping", "restaurants", "4-star"],
+    description: "This casino hotel is a well-known destination on the Las Vegas strip packed full of things to do both for residents and anyone passing by! They have an aquarium which you can pay to enter, a 'beach' and even a lazy river. Not to mention the huge selection of shops and restaurants on site. 4-star rated.",
+    coordinates: [-115.17485, 36.09218]
+  },
+
+  {
+    name: "MGM Grand",
+    tags: ["hotel", "casino", "pool", "lazy river", "restaurants", "entertainment", "nightclub", "4-star"],
+    description: "The MGM Grand is a huge hotel with great transport links to the rest of the strip, a huge pool complex including a lazy river, and a wide range of dining options from fast food like Raising Cane's and fine dining like Hakkasan Restaurant and L'Atelier.  Plus, there's entertainment options like the Grand Garden Arena and 3-storey Hakkasan Nightclub. 4-star rated.",
+    coordinates: [-115.16757, 36.10362]
+  },
+
+  {
+    name: "New York-New York",
+    tags: ["hotel", "casino", "New York", "shopping", "dining", "rollercoaster", "4-star"],
+    description: "Regardless of whether you're staying in the area, you need to visit New York-New York hotel and casino! The theme is, of course, New York City, with sections designed after famous skyscrapers and a shopping & dining complex made to feel like you're walking the streets of the city. There's even a rollercoaster (The Big Apple Coaster) which passes through the inside and outside of the hotel! 4-star rated. ",
+    coordinates: [-115.17442, 36.10213]
+  },
+
+  {
+    name: "The Venetian",
+    tags: ["hotel", "luxury", "Italian", "Venice", "shopping", "canals", "gondola", "5-star"],
+    description: "Looking for a true Italian experience, but in the heart of Las Vegas? Look no further! The Venetian not only has an Italian theme and beautiful design, but you can actually walk through a shopping centre inside the hotel that is designed to look and feel like the streets of Venice. So much so that there are even canals through the shops and restaurant complex, that you can take a Gondola ride on! Nothing is impossible in Las Vegas! 5-star rated.",
+    coordinates: [-115.16965, 36.12117]
+  },
+
+  {
+    name: "Paris",
+    tags: ["hotel", "casino", "French", "Eiffel tower", "restaurants", "Las Vegas Strip", "4-star"],
+    description: "This hotel is beautifully themed, and has the most gorgeous exterior, so even if you're not staying there, make sure to pass by! There is literally a replica of the Eiffel tower outside which lights up in the dark. There are lots of French-themed dining options here, a huge casino, and the hotel is brilliantly located in the centre of the Las Vegas Strip. 4-star rated.",
+    coordinates: [-115.1707, 36.11246]
+  },
+
+  {
+    name: "Park MGM",
+    tags: ["hotel", "resort", "eco-friendly", "smoke-free", "dog-friendly", "dining"],
+    description: "An eco-friendly resort on the Las Vegas strip, close to the T-Mobile arena. Park MGM is famously smoke-free, and it's also dog-friendly. You're also steps away from The Park outdoor entertainment area. There are some great casual dining options at Park MGM such as Eataly, The Chef Truck, Lavazza and Starbucks.",
+    coordinates: [-115.17666, 36.1044]
+  },
+
+  {
+    name: "Planet Hollywood",
+    tags: ["hotel", "resort", "shopping", "bars", "restaurants", "shows", "gaming", "4-star"],
+    description: "This resort is absolutely packed with shops, bars, restaurants, shows and gaming, The Miracle Mile shops complex (which is actually more than a mile long) is where you'll find lots of high street and designer brands, as well as amazing drinking & dining options. There are lots of shows and entertainment options, including free projection shows throughout the shops. 4-star rated. ",
+    coordinates: [-115.17006, 36.10996]
+  },
+
+  {
+    name: "Resorts World",
+    tags: ["hotel", "North-strip", "theatre", "pools", "restaurants", "4-star"],
+    description: "Definitely easy to spot, this North-strip hotel has a huge 100,000ft screen on it's face. Resorts world is a huge hotel with a 500-seat theatre, 7 pools including an adults-only area, and a variety of dining options from Italian to Latin American to Mongolian! 4-star rated.",
+    coordinates: [-115.16765, 36.1341]
+  },
+
+  {
+    name: "SAHARA",
+    tags: ["hotel", "desert", "luxury", "North Strip", "convention centre", "Monorail", "rooftop pool", "4-star"],
+    description: "This desert themed hotel in Las Vegas is beautifully designed, sitting at the very North of the Las Vegas strip. It's known for luxurious rooms, and a great access to the convention centre as well as the Monorail to access the rest of the Las Vegas strip. Their rooftop pool offers amazing mountain and strip views! 4-star rated.",
+    coordinates: [-115.15672, 36.14235]
+  },
+
+  {
+    name: "The STRAT",
+    tags: ["hotel", "casino", "observation deck", "tower", "revolving restaurant", "thrill rides", "4-star"],
+    description: "The northernmost hotel on the Las Vegas Strip, and one that truly stands out! Not only is the STRAT a hotel and casino, it also has an observation deck 108 storeys up, a revolving restaurant, and thrill rides & experiences at the top of the tower! You can even get married at the top of the tower, with a view of the Las Vegas Strip below! 4-star rated.",
+    coordinates: [-115.15655, 36.14751]
+  },
+
+  {
+    name: "Treasure Island",
+    tags: ["hotel", "casino", "pirate", "dining", "entertainment", "Mystere", "4-star"],
+    description: "This pirate-themed resort is centrally located on the Las Vegas strip and has a great range of rooms, dining and entertainment options, including the amazing Mystere by Cirque du Soleil. 4-star rated.",
+    coordinates: [-115.17208, 36.12474]
+  },
+
+  {
+    name: "The Vanderpump Hotel",
+    tags: ["hotel", "luxury", "bars", "restaurants", "stylish", "central", "4-star"],
+    description: "Pink, bright and very instagram-worthy! This hotel is luxurious, and perfectly located in the centre of the strip. There are beautiful bar and restaurant options, stylish decor throughout the hotel, and a more intimate feel than many of the other hotels in Las Vegas, with 188 rooms in total. 4-star rated ",
+    coordinates: [-115.1718, 36.11501]
+  },
+
+  {
+    name: "Vdara",
+    tags: ["hotel", "resort", "non-gaming", "non-smoking", "central", "5-star"],
+    description: "This sophisticated resort is non-gaming and non-smoking, aiming to offer an escape from the chaos of the Las Vegas Strip whilst still being centrally located. 5-star rated",
+    coordinates: [-115.17753, 36.10928]
+  },
+
+  {
+    name: "W Hotel (Mandalay Bay)",
+    tags: ["hotel", "luxury", "Mandalay Bay", "rooms", "bar", "restaurant"],
+    description: "Part of the Mandalay Bay complex, the W is a luxury tower with access to all the Mandalay Bay amenities but it's own exclusive, luxury rooms, check in and bar and restaurant options.",
+    coordinates: [-115.17765, 36.09285]
+  },
+
+  {
+    name: "Waldorf Astoria",
+    tags: ["hotel", "luxury", "non-smoking", "non-gaming", "spa", "5-star"],
+    description: "The Waldorf Astoria is a non-smoking and non-gaming property, aiming to provide some tranquility whilst still being central to the Las Vegas Strip. The hotel is known for its incredible spa, with two floors of pure relaxation! 5-star rated.",
+    coordinates: [-115.17373, 36.10643]
+  },
+
+  {
+    name: "Casino Royale",
+    tags: ["hotel", "casino", "central", "dining", "fitness centre", "3-star"],
+    description: "This centrally located hotel is perfect for a short stay right in the heart of the Las Vegas Strip with casual dining options and a 24 hour fitness centre. 3-star rated.",
+    coordinates: [-115.17196, 36.12063]
+  },
+
+  {
+    name: "Elara",
+    tags: ["hotel", "non-gaming", "Las Vegas Strip", "Miracle Mile", "Planet Hollywood"],
+    description: "A non-gaming stay on the Las Vegas Strip adjoining to the Miracle Mile shops and Planet Hollywood resort. ",
+    coordinates: [-115.16867, 36.10855]
+  },
+
+
+  // FOOD & DRINK
+
+  {
+    name: "Funny Library Coffee Shop",
+    tags: ["coffee", "cafe", "Virgin Hotel", "frappes", "pastries"],
+    description: "A great little coffee shop inside the Virgin Hotel Las Vegas, open to non residents. Offers delicious frappes and pastries!",
+    coordinates: [-115.15478, 36.11071]
+  },
+
+  {
+    name: "Flights",
+    tags: ["restaurant", "aviation", "dining", "drinks", "Happy Hour", "affordable"],
+    description: "Not just any restaurant - at Flights you can literally dine under a plane! The whole restaurant is aviation themed, and you can try 'flights' of lots of different flavours of each dish or drink. General prices are affordable, especially considering the quality & quantity of food and drink you receive in each dish, but on top of that they also offer daily drinks specials and Happy Hour deals!",
+    coordinates: [-115.16941, 36.11092]
+  },
+
+  {
+    name: "Rockhouse",
+    tags: ["bar", "restaurant", "burgers", "sandwiches", "live music", "beer", "cocktails"],
+    description: "A great bar and restaurant offering a choice of burgers, sandwiches, appetisers and salads, as well as live music, a good beer selection and amazing cocktails! There are regular deals and specials so make sure to ask your server what's on that day! It's also perfectly located close to the Grand Canal Shoppes and Gondola rides.",
+    coordinates: [-115.17035, 36.12274]
+  },
+
+  {
+    name: "Makers & Finders",
+    tags: ["restaurant", "brunch", "Latin-inspired", "lunch", "coffee", "Arts District"],
+    description: "The best brunch in Las Vegas! Latin-inspired brunch and lunch dishes, with amazing coffees too, and the friendliest service. Really reasonably priced for the amazing quality of food that you receive, everything is freshly made, and it's in the heart of the arts district.",
+    coordinates: [-115.15394, 36.15789]
+  },
+
+  {
+    name: "ReBAR",
+    tags: ["bar", "Arts District", "outdoor patio", "drinks", "local", "shopping"],
+    description: "A local spot for incredible drinks deals with a huge outdoor patio and a unique space. Everything in ReBAR is for sale, so anything you see on the walls that you love, you can buy to take home with you. The main attraction is the local feel on the prices - deals like $7 for a beer and a whiskey just don't come around often in Las Vegas!",
+    coordinates: [-115.15345, 36.15656]
+  },
+
+  {
+    name: "Davy’s",
+    tags: ["bar", "Arts District", "outdoor", "pizza", "hot dogs", "beer", "cocktails"],
+    description: "An amazing bar in the arts district with a great indoor and outdoor space to chill with an affordable drink. They also offer fresh pizzas & hot dogs, on top of their amazing beers & cocktails. They claim the best price on draft beer in all of Las Vegas!!",
+    coordinates: [-115.1535, 36.15672]
+  },
+
+  {
+    name: "Miami Slice",
+    tags: ["pizza", "restaurant", "20 inch pizza", "margarita", "pepperoni", "vodka sauce", "truffle mushroom"],
+    description: "When in Las Vegas, it's go big or go home, and these 20\" pizza pies certainly don't disappoint! They offer classics like margarita and pepperoni as well as unique flavours such as vodka sauce or truffle mushroom. (Don't worry, you can of course just take a slice if you're solo or in a small group)",
+    coordinates: [-115.16105, 36.13662]
+  },
+
+  {
+    name: "OMNIA Dayclub",
+    tags: ["dayclub", "DJ", "music", "nightclub", "entertainment", "Las Vegas Strip"],
+    description: " A great place to spend a chill day or see a DJ. Lots of big names play here, and you can often get free entry for Omnia or other day and nightclubs via a Las Vegas club promoter. ",
+    coordinates: [-115.17414, 36.11729]
+  },
+
+  {
+    name: "The Underground Speakeasy and Distillery",
+    tags: ["speakeasy", "distillery", "cocktails", "prohibition", "The Mob Museum", "bar"],
+    description: "Situated inside The Mob Museum, The Underground is a prohibition-themed speakeasy with incredible cocktails, a stunning interior, and amazing service. We couldn't recommend this more as an experience!",
+    coordinates: [-115.14125, 36.17282]
+  },
+
+  {
+    name: "BrewDog",
+    tags: ["bar", "restaurant", "terrace", "food", "drinks", "views", "Las Vegas Strip"],
+    description: "This bar and restaurant has an amazing open-air and covered terrace, with regular deals on food and drinks and great views of the Las Vegas Strip!",
+    coordinates: [-115.17236, 36.10466]
+  },
+  {
+    name: "Arts District",
+    tags: ["neighborhood", "independent shops", "bars", "cafes", "food", "drinks", "sightseeing"],
+    description: " An area full of independent, unique shops bars and cafes, close to the Stratosphere hotel and casino. Prices here for food and drinks are significantly lower than the main Las Vegas strip and often higher quality too! A great place to explore for an hour or two. ",
+    coordinates: [-115.15186, 36.15959]
+  },
+
+  {
+    name: "Fremont Street Experience",
+    tags: ["landmark", "Las Vegas", "casinos", "street performances", "entertainment", "zipline", "sightseeing"],
+    description: "The original Las Vegas!! Visit this area to see lots of iconic Las Vegas hotels, older casinos and street performances. The whole area is covered by a huge overhead screen with visuals, so it's crazy to see at night. There is even an option to zipline down Fremont Street to see it from above! ",
+    coordinates: [-115.14382, 36.17072]
+  },
+
+  {
+    name: "Excalibur Casino Bars",
+    tags: ["bar", "Excalibur", "casino", "margaritas", "drinks", "deals"],
+    description: "$3 margaritas are available at all casino bars in the Excalibur, and they're pretty good too! Don't miss it! ",
+    coordinates: [-115.17543, 36.09879]
+  },
+
+  {
+    name: "La Salsa",
+    tags: ["restaurant", "Mexican", "Miracle Mile Shops", "nachos", "enchiladas", "casual dining"],
+    description: "A casual Mexican restaurant inside Miracle Mile shops with delicious nachos and enchiladas, plus lots of other classics on their menu!   ",
+    coordinates: [-115.16897, 36.11046]
+  },
+
+  {
+    name: "Blondies Sports Bar & Grill",
+    tags: ["bar", "restaurant", "sports", "Miracle Mile Shops", "drinks", "sports bar"],
+    description: "A popular bar and restaurant inside Miracle Mile shops, with lots of screens for sports lovers. Drinks deals are great value so make sure you ask what they have on special offer that day!",
+    coordinates: [-115.16949, 36.11032]
+  }
+];
+const directionsLinks = {
+
+  // HOTELS
+
+  "ARIA": "https://maps.google.com/?cid=3383197481682797935",
+  "Bellagio": "https://maps.google.com/?cid=9435823821871451524",
+  "Caesars Palace": "https://maps.google.com/?cid=8631651105269301239",
+  "Circus Circus": "https://www.google.com/maps?cid=1432224380938167540",
+  "The Cosmopolitan": "https://maps.google.com/?cid=7858603838555454536",
+  "Wynn": "https://maps.google.com/?cid=12808584183743737837",
+  "Excalibur": "https://maps.google.com/?cid=12630155541145575913",
+  "Flamingo": "https://maps.google.com/?cid=7231546528180136565",
+  "Fontainebleau": "https://maps.google.com/?cid=15000247208283159412",
+  "Four Seasons": "https://maps.google.com/?cid=1099501762694905372",
+  "Harrah’s": "https://maps.google.com/?cid=16220946785969704627",
+  "Horseshoe": "https://maps.google.com/?cid=7924606492054229216",
+  "The LINQ": "https://maps.google.com/?cid=8824692494828823365",
+  "Luxor": "https://maps.google.com/?cid=818094026188128568",
+  "Mandalay Bay": "https://maps.google.com/?cid=10950091438833327599",
+  "MGM Grand": "https://maps.google.com/?cid=11374198224856682623",
+  "New York-New York": "https://maps.google.com/?cid=17126215958705175790",
+  "The Venetian": "https://maps.google.com/?cid=11652001351180211013",
+  "Paris": "https://maps.google.com/?cid=4991312229159558145",
+  "Park MGM": "https://maps.google.com/?cid=16347407407960366024",
+  "Planet Hollywood": "https://maps.google.com/?cid=8958897118179362204",
+  "Resorts World": "https://maps.google.com/?cid=5111851517517796548",
+  "SAHARA": "https://maps.google.com/?cid=7748267687177175190",
+  "The STRAT": "https://maps.google.com/?cid=1990363565874251783",
+  "Treasure Island": "https://maps.google.com/?cid=687806549951989523",
+  "The Vanderpump Hotel": "https://maps.google.com/?cid=12672183479538081720",
+  "W Hotel (Mandalay Bay)": "https://maps.google.com/?cid=17772126459298035796",
+  "Waldorf Astoria": "https://maps.google.com/?cid=9695130198433897501",
+  "Casino Royale": "https://maps.google.com/?cid=174016065147550278",
+  "Elara": "https://maps.google.com/?cid=11811924973166581659",
+  "Vdara": "https://maps.google.com/?cid=3273037023901598993",
+
+
+  // THINGS TO DO
+
+  "Miracle Mile Shops": "https://maps.google.com/?cid=14101864781662542798",
+  "Eiffel Tower": "https://maps.google.com/?cid=5402087618255485856",
+  "Fountains of Bellagio": "https://maps.google.com/?cid=16305082807333548246",
+  "High Roller": "https://maps.google.com/?cid=3384827311381957815",
+  "The Forum Shops": "https://maps.google.com/?cid=11488786390329559225",
+  "Grand Canal Shoppes": "https://maps.google.com/?cid=5428349338389847017",
+  "Trevi Fountain": "https://maps.google.com/?cid=5723032287846178497",
+  "The Colosseum Theatre": "https://maps.google.com/?cid=12496029472014684918",
+  "Sphere": "https://maps.google.com/?cid=4810278264660580079",
+  "Shark Reef Aquarium in Mandalay Bay": "https://maps.google.com/?cid=3750826959886731996",
+  "Welcome to Fabulous Las Vegas Sign": "https://maps.google.com/?cid=4756498468048835337",
+  "Allegiant Stadium": "https://maps.google.com/?cid=11896779474331314633",
+  "Gateway Arches Las Vegas": "https://maps.google.com/?cid=14399296464242067547",
+  "Bellagio Conservatory & Botanical Garden": "https://maps.google.com/?cid=14338453221781181221",
+  "Seven Magic Mountains": "https://maps.google.com/?cid=10516462303465258205",
+  "Koolsville Tattoo": "https://maps.google.com/?cid=18290879609314515793",
+  "The Mob Museum": "https://maps.google.com/?cid=6140054583531483805",
+  "The Big Apple Coaster": "https://maps.google.com/?cid=1381465987689730289",
+  "Las Vegas North Premium Outlets": "https://maps.google.com/?cid=3097201989135324679",
+  "Las Vegas South Premium Outlets": "https://maps.google.com/?cid=14832773357383747629",
+  "Arts District": "https://maps.google.com/?cid=7685848381299457430",
+  "Fremont Street Experience": "https://maps.google.com/?cid=1868794094261391412",
+
+
+  // FOOD AND DRINK
+
+  "Funny Library Coffee Shop": "https://maps.google.com/?cid=10748443365581071859",
+  "Flights": "https://maps.google.com/?cid=5116999535670511093",
+  "Rockhouse": "https://maps.google.com/?cid=17819040194143256551",
+  "Makers & Finders": "https://maps.google.com/?cid=1468765974990217986",
+  "ReBAR": "https://maps.google.com/?cid=5281412906626908581",
+  "Davy’s": "https://maps.google.com/?cid=47958274689682771",
+  "Miami Slice": "https://maps.google.com/?cid=3991591042405919615",
+  "OMNIA Dayclub": "https://maps.google.com/?cid=1284576550580781939",
+  "The Underground Speakeasy and Distillery": "https://maps.google.com/?cid=9451748821991953038",
+  "BrewDog": "https://maps.google.com/?cid=6216428947392746635",
+  "Excalibur Casino Bars": "https://maps.google.com/?cid=12630155541145575913",
+  "La Salsa": "https://maps.google.com/?cid=6716162781607758314",
+  "Blondies Sports Bar & Grill": "https://maps.google.com/?cid=13318353493491282267"
+
+};
+const bookingLinks = {
+  "High Roller": "https://ticketmaster.tpx.lv/x14UYPHu",
+  "Allegiant Stadium": "https://getyourguide.tpx.lv/4j1Aw3Zh",
+
+  "ARIA": "https://booking.tpx.lv/RPGLvaJ2",
+  "Bellagio": "https://booking.tpx.lv/WxFcDzSE",
+  "Caesars Palace": "https://booking.tpx.lv/uPUPqf2Z",
+  "Circus Circus": "https://booking.tpx.lv/hlGTqtCI",
+  "The Cosmopolitan": "https://booking.tpx.lv/6FM91xwO",
+  "Wynn": "https://booking.tpx.lv/iT3EvCyg",
+  "Excalibur": "https://booking.tpx.lv/hNvOssHu",
+  "Flamingo": "https://booking.tpx.lv/VZnhmWHl",
+  "Fontainebleau": "https://booking.tpx.lv/hPg7lZVt",
+  "Four Seasons": "https://booking.tpx.lv/r3qSGlqZ",
+  "Harrah’s": "https://booking.tpx.lv/F3IS8d91",
+  "Horseshoe": "https://booking.tpx.lv/qY8BOUQS",
+  "The LINQ": "https://booking.tpx.lv/YaKS3FDg",
+  "Luxor": "https://booking.tpx.lv/l8zPbHtv",
+  "Mandalay Bay": "https://booking.tpx.lv/K5RJxEue",
+  "MGM Grand": "https://booking.tpx.lv/Rfdat2um",
+  "New York-New York": "https://booking.tpx.lv/eXypTNWJ",
+  "The Venetian": "https://booking.tpx.lv/xFxoevxz",
+  "Paris": "https://booking.tpx.lv/3SXZBPvW",
+  "Park MGM": "https://booking.tpx.lv/gj8K0c2j",
+  "Planet Hollywood": "https://booking.tpx.lv/LP2QAIKu",
+  "SAHARA": "https://booking.tpx.lv/7BKUB2oz",
+  "The STRAT": "https://booking.tpx.lv/BpFY9r8h",
+  "Treasure Island": "https://booking.tpx.lv/lrW9uOv9",
+  "The Vanderpump Hotel": "https://booking.tpx.lv/9D6fInnK",
+  "Vdara": "https://booking.tpx.lv/9wpjpAbL",
+  "W Hotel (Mandalay Bay)": "https://booking.tpx.lv/f8anLcUv",
+  "Waldorf Astoria": "https://booking.tpx.lv/wGDYRicV",
+  "Casino Royale": "https://booking.tpx.lv/mAeXnYtp",
+  "Elara": "https://booking.tpx.lv/Z9H3dDtz",
+  "Resorts World": "https://booking.tpx.lv/xIIWwGbf", 
+  "Harrah's": "https://booking.tpx.lv/HdGwureI"
+};
+
+  const fuse = new Fuse(savedPoints, {
+    keys: ['name', 'tags'],
+    threshold: 0.4,
+    ignoreLocation: true,
+    includeScore: true
+  });
+
+  const searchInput = document.getElementById('search');
+  const suggestionsDiv = document.getElementById('suggestions');
+  let currentPopup = null;
+  let allFeatures = [];
+  let popupOpenedByClick = false
+  let popupHovering = false;
+
+  function isMobile() {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+function createPopup(feature, lngLat, clicked = false) {
+  // remove any existing popup
+  if (currentPopup) {
+    currentPopup.remove();
+    currentPopup = null;
+  }
+
+  // set whether this popup is "locked" by a click
+  popupOpenedByClick = clicked;
+  // reset hover flag
+  popupHovering = false;
+
+  const name = feature.properties?.name || feature.properties?.Name || feature.properties?.title || "No title";
+  const description = feature.properties?.description || feature.properties?.Description || "No description";
+  const directions = directionsLinks[name] || `https://www.google.com/maps/search/${encodeURIComponent(name)}`;
+  const hasBookingLink = bookingLinks[name];
+
+  let bookingButtonHTML = '';
+  if (hasBookingLink) {
+    bookingButtonHTML = `<a href="${bookingLinks[name]}" class="directions-btn" target="_blank"> Book now! </a>`;
+  }
+
+  currentPopup = new mapboxgl.Popup({ closeButton: false })
+    .setLngLat(lngLat)
+    .setHTML(`
+      <div class="custom-popup">
+        <strong>${name}</strong>
+        <p>${description}</p>
+        <a href="${directions}" class="directions-btn" target="_blank">
+          <span>📍</span> <span>Directions</span>
+        </a>
+        ${bookingButtonHTML}
+      </div>
+    `)
+    .addTo(map);
+
+  // Popup DOM hover handlers — keep popup open while mouse is over it
+  const popupEl = document.querySelector(".mapboxgl-popup");
+  if (popupEl) {
+    popupEl.addEventListener("mouseenter", () => {
+      popupHovering = true;
+    });
+    popupEl.addEventListener("mouseleave", () => {
+      popupHovering = false;
+      // close only if not locked by click
+      if (!popupOpenedByClick && currentPopup) {
+        currentPopup.remove();
+        currentPopup = null;
+      }
+    });
+  }
+}
+
+function searchAndZoomToFeature(name) {
+  const lowerName = name.toLowerCase();
+
+  // 1️⃣ First: check all loaded features (includes description)
+  for (let feature of allFeatures) {
+    const featureName =
+      feature.properties?.name ||
+      feature.properties?.Name ||
+      feature.properties?.title;
+
+    if (featureName && featureName.toLowerCase().includes(lowerName)) {
+      const coords = feature.geometry.coordinates;
+      map.flyTo({ center: coords, zoom: 17 });
+
+      setTimeout(() => createPopup(feature, coords, true), 300);
+      return;
+    }
+  }
+
+  // 2️⃣ If not found, check currently rendered features (backup)
+  const rendered = map.queryRenderedFeatures();
+  for (let feature of rendered) {
+    const featureName =
+      feature.properties?.name ||
+      feature.properties?.Name ||
+      feature.properties?.title;
+
+    if (featureName && featureName.toLowerCase().includes(lowerName)) {
+      const coords = feature.geometry.coordinates;
+      map.flyTo({ center: coords, zoom: 17 });
+
+      setTimeout(() => createPopup(feature, coords, true), 300);
+      return;
+    }
+  }
+
+// 3️⃣ Use savedPoints (guaranteed list with coords)
+const matchingPoint = savedPoints.find(p => p.name.toLowerCase().includes(lowerName));
+if (matchingPoint) {
+  if (matchingPoint.coordinates) {
+    const directions = directionsLinks[matchingPoint.name] || `https://www.google.com/maps/search/${encodeURIComponent(matchingPoint.name)}`;
+    map.flyTo({ center: matchingPoint.coordinates, zoom: 17 });
+    setTimeout(() => {
+      currentPopup = new mapboxgl.Popup({ closeButton: false })
+        .setLngLat(matchingPoint.coordinates)
+        .setHTML(`
+          <div class="custom-popup">
+            <strong>${matchingPoint.name}</strong>
+            <p>${matchingPoint.description || ''}</p>
+            <a href="${directions}" class="directions-btn" target="_blank">
+              <span>📍</span> <span>Directions</span>
+            </a>
+          </div>
+        `)
+        .addTo(map);
+    }, 300);
+  } else {
+    alert('"' + matchingPoint.name + '": Coordinates not available.');
+  }
+  return;
+}
+}
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim();
+    suggestionsDiv.innerHTML = '';
+    if (!query) {
+      savedPoints.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'suggestion';
+        div.textContent = item.name;
+        div.onclick = () => {
+          searchInput.value = item.name;
+          suggestionsDiv.innerHTML = '';
+          searchAndZoomToFeature(item.name);
+        };
+        suggestionsDiv.appendChild(div);
+      });
+      return;
+    }
+    const results = fuse.search(query);
+    if (results.length) {
+      results.forEach(({ item }) => {
+        const div = document.createElement('div');
+        div.className = 'suggestion';
+        div.textContent = item.name;
+        div.onclick = () => {
+          searchInput.value = item.name;
+          suggestionsDiv.innerHTML = '';
+          searchAndZoomToFeature(item.name);
+        };
+        suggestionsDiv.appendChild(div);
+      });
+    } else {
+      const div = document.createElement('div');
+      div.className = 'no-results';
+      div.textContent = "Can't find what you're looking for? It must not be somewhere we've tried & tested for you yet! Why not try a Google Search instead?";
+      suggestionsDiv.appendChild(div);
+    }
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const query = searchInput.value.trim();
+      const result = fuse.search(query)[0];
+      if (result) {
+        searchAndZoomToFeature(result.item.name);
+        suggestionsDiv.innerHTML = '';
+      }
+    }
+  });
+
+  searchInput.addEventListener('focus', () => searchInput.dispatchEvent(new Event('input')));
+
+  document.addEventListener('click', function (event) {
+    const isClickInside = searchInput.contains(event.target) || suggestionsDiv.contains(event.target);
+    if (!isClickInside) {
+      suggestionsDiv.innerHTML = '';
+    }
+  });
+
+  map.on('load', () => {
+    const layers = ['foodanddrink', 'sightseeing', 'hotels'];
+    const layerCheckboxes = {
+  foodanddrink: document.getElementById('toggle-fnd'),
+  sightseeing: document.getElementById('toggle-attractions'),
+  hotels: document.getElementById('toggle-hotels')
+};
+    const layerToSourceLayer = {
+      'sightseeing': 'sightseekr.lcrwkrp5xdvo',
+      'foodanddrink': 'sightseekr.hl5qltinf0o1',
+      'hotels': 'sightseekr.a6sajwdx904f',
+    };
+    const sourceId = 'composite';
+
+    function loadAllFeatures() {
+      layers.forEach(layer => {
+        const sourceLayer = layerToSourceLayer[layer];
+        try {
+          const sourceFeatures = map.querySourceFeatures(sourceId, {
+            sourceLayer: sourceLayer
+          });
+          sourceFeatures.forEach(feature => {
+            const isDuplicate = allFeatures.some(existing => 
+              existing.properties && feature.properties &&
+              existing.properties.name === feature.properties.name
+            );
+            if (!isDuplicate && feature.properties && feature.properties.name) {
+              allFeatures.push(feature);
+            }
+          });
+        } catch (error) {
+          const renderedFeatures = map.queryRenderedFeatures({ layers: [layer] });
+          renderedFeatures.forEach(feature => {
+            const isDuplicate = allFeatures.some(existing => 
+              existing.properties && feature.properties &&
+              existing.properties.name === feature.properties.name
+            );
+            if (!isDuplicate && feature.properties && feature.properties.name) {
+              allFeatures.push(feature);
+            }
+          });
+     }
+      });
+    }
+
+    map.on('data', (e) => {
+      if (e.dataType === 'source' && e.sourceId === sourceId) {
+        allFeatures = [];
+        loadAllFeatures();
+      }
+    });
+
+    map.once('idle', () => {
+      if (allFeatures.length === 0) {
+        loadAllFeatures();
+      }
+    });
+Object.entries(layerCheckboxes).forEach(([layerId, checkbox]) => {
+  if (!checkbox) return;
+
+  checkbox.addEventListener('change', (e) => {
+    const visibility = e.target.checked ? 'visible' : 'none';
+
+    if (map.getLayer(layerId)) {
+      map.setLayoutProperty(layerId, 'visibility', visibility);
+    } else {
+      console.warn(`Layer not found: ${layerId}`);
+    }
+  });
+});
+if (!isMobile()) {
+  layers.forEach(layer => {
+    // Hover: show popup (not locked)
+    map.on('mouseenter', layer, e => {
+      map.getCanvas().style.cursor = 'pointer';
+      createPopup(e.features[0], e.lngLat, false);
+    });
+
+    // When leaving the marker: wait a short tick and only close if
+    // not hovering the popup and not clicked (locked)
+    map.on('mouseleave', layer, () => {
+      map.getCanvas().style.cursor = '';
+      setTimeout(() => {
+        if (!popupOpenedByClick && !popupHovering && currentPopup) {
+          currentPopup.remove();
+          currentPopup = null;
+        }
+      }, 40); // tiny delay to allow mouse to enter popup
+    });
+
+    // Click on marker: open popup and lock it (until clicking map background)
+    map.on('click', layer, e => {
+      if (currentPopup) currentPopup.remove();
+      createPopup(e.features[0], e.lngLat, true);
+    });
+  });
+}else {
+    // Mobile: only click to open popup (no hover)
+    layers.forEach(layer => {
+        map.on('click', layer, e => {
+        if (currentPopup) currentPopup.remove();
+        createPopup(e.features[0], e.lngLat, true);
+        });
+    });
+}
+    // Click on map background: close any open popup
+    map.on('click', (e) => {
+      const features = map.queryRenderedFeatures(e.point, { layers: layers });
+      if (features.length === 0 && currentPopup) {
+        currentPopup.remove();
+        currentPopup = null;
+        popupOpenedByClick = false;
+      }
+    });
+  });
+}
+</script>
+</body>
+</html> 
